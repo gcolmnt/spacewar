@@ -202,7 +202,7 @@ export default function Player({ onScoreChange, onHPChange }) {
 
   useFrame((state, delta) => {
 
-    // console.log(playerRef.current.position)
+    console.log(playerHP)
 
     const { forward, backward, leftward, rightward, shoot } = getKeys()
 

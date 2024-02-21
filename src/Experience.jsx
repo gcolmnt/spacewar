@@ -18,7 +18,7 @@ export default function Experience()
     ]
 
     const [score, setScore] = useState(0)
-    const [playerHP, setPlayerHP] = useState(3)
+    const [playerHP, setPlayerHP] = useState(2)
     
     const handleScoreChange = (newScore) => {
       setScore(newScore)
