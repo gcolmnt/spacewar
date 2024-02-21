@@ -5,6 +5,7 @@ import * as THREE from 'three'
 import Bullet from './Bullet.jsx'
 import EnemyBullet from './EnemyBullet.jsx'
 import useGame from './stores/useGame.jsx'
+import PowerUp from './PowerUp.jsx'
 
 export default function Player({ onScoreChange, onHPChange }) {
 
@@ -15,21 +16,34 @@ export default function Player({ onScoreChange, onHPChange }) {
   /**
    * Const Setting
    */
+
+  const playerBaseHP = 2
+  const playerBaseShootSpeed = 5
+  const speedModifier = 1
+  const speedPlayer = 10
+  const speedTarget = 5
+  const bulletSpeedPlayer = 20
+  const bulletSpeedTarget = 15
+  const shotSpeedTarget = 0.5
+  const waveSpeed = 0.5
+  const waveIntensity = 7
+  const powerUpChance = 10/100 
+
   const playerRef = useRef()
   const canShoot = useRef(true)
   const canTargetShoot = useRef(true)
-
-  const playerBaseHP = 3
 
   const [subscribeKeys, getKeys] = useKeyboardControls()
 
   const [playerBullets, setPlayerBullets] = useState([])
   const [targetBullets, setTargetBullets] = useState([])
+  const [powerUps, setPowerUps] = useState([])
   const [targets, setTargets] = useState([])
 
   const [score, setScore] = useState(0)
 
   const [playerHP, setPlayerHP] = useState(playerBaseHP)
+  const [shotSpeedPlayer, setShotSpeedPlayer] = useState(playerBaseShootSpeed)
   const [canDecreaseHP, setCanDecreaseHP] = useState(true)
   const [opacitySwitch, setOpacitySwitch] = useState(true)
 
@@ -55,20 +69,7 @@ export default function Player({ onScoreChange, onHPChange }) {
     }
   }
 
-  /**
-   * Game Variables
-   */
-  
-  let speedModifier = 1
-  const speedPlayer = 10
-  const speedTarget = 5
-  const bulletSpeedPlayer = 20
-  const bulletSpeedTarget = 15
-  let shotSpeedPlayer = 5   // Number of shot per second
-  const shotSpeedTarget = 0.5
 
-  const waveSpeed = 0.5
-  const waveIntensity = 7
 
   // Define screen boundaries
   const minX = -20; // Minimum x-coordinate
@@ -108,6 +109,20 @@ export default function Player({ onScoreChange, onHPChange }) {
     return newTarget
   }
 
+  /**
+   * Power Up Creation Function
+   */
+
+  const spawnPowerUP = (position) => {
+    const newPowerUP = {
+      id: Math.random(),
+      position: [...position],
+    }
+
+    setPowerUps((prevPowerUps) => [...prevPowerUps, { id: newPowerUP.id, position: newPowerUP.position }])
+    return newPowerUP
+  }
+
   const start = useGame((state) => state.start)
   const end = useGame((state) => state.end)
   const restart = useGame((state) => state.restart)
@@ -121,6 +136,10 @@ export default function Player({ onScoreChange, onHPChange }) {
       const newHP = playerBaseHP
       onHPChange(newHP)
       return newHP
+    })
+    setShotSpeedPlayer((prevShotSpeed) => {
+      const newShotSpeed = playerBaseShootSpeed
+      return newShotSpeed
     })
     traverseAndSetOpacity(playerRef.current, 1)
     setFirstInput(false)
@@ -183,7 +202,7 @@ export default function Player({ onScoreChange, onHPChange }) {
 
   useFrame((state, delta) => {
 
-    console.log(playerRef.current.position)
+    // console.log(playerRef.current.position)
 
     const { forward, backward, leftward, rightward, shoot } = getKeys()
 
@@ -196,7 +215,7 @@ export default function Player({ onScoreChange, onHPChange }) {
      */
     if (forward) playerRef.current.position.z = Math.max(playerRef.current.position.z - speedModifier * speedPlayer * delta, minZ)
 
-    if (backward) playerRef.current.position.z = Math.min(playerRef.current.position.z + speedModifier * speedPlayer * delta, maxZ)
+    if (backward) playerRef.current.position.z = Math.min(playerRef.current.position.z + speedModifier * 1.5 * speedPlayer * delta, maxZ)
 
     if (rightward) {
       playerRef.current.position.x = Math.min(playerRef.current.position.x + speedModifier * speedPlayer * delta, maxX)
@@ -231,6 +250,7 @@ export default function Player({ onScoreChange, onHPChange }) {
       setPlayerBullets([])
       setTargetBullets([])
       setTargets([])
+      setPowerUps([])
       end()
     } else { 
       if (!canDecreaseHP) {
@@ -288,6 +308,11 @@ export default function Player({ onScoreChange, onHPChange }) {
           if (targetPosition && bulletPosition.distanceTo(targetPosition) < 1) {
             // Remove the target if a bullet hit the target
             const updatedTargets = targets.filter((t) => t.id !== target.id)
+            // 1/10 chance of dropping a power UP
+            if (Math.random() < powerUpChance) {
+              console.log("powerUP")
+              spawnPowerUP(target.position)
+            }
             if (updatedTargets.length > 4) {
               // If there is more than "updatedTargets.length + 1" targets remove 1 targets
               setTargets([...updatedTargets, ...Array.from({ length: 0 }, () => spawnRandomTarget())])
@@ -311,6 +336,8 @@ export default function Player({ onScoreChange, onHPChange }) {
         return true
       })
     )
+
+
 
     /**
      * Collision check between Player and Enemy
@@ -340,6 +367,40 @@ export default function Player({ onScoreChange, onHPChange }) {
         })
         break // No need to check further once a collision is detected
       } else {
+      }
+    }
+
+    /**
+     * Power Up
+     */
+    // Movement
+    setPowerUps((prevPowerUps) =>
+    prevPowerUps
+      .map((powerUp) => {
+        const newPosition = new THREE.Vector3().fromArray(powerUp.position)
+        newPosition.z += bulletSpeedTarget * 0.5 * delta // Update the z position directly
+        return {
+          ...powerUp,
+          position: [newPosition.x, newPosition.y, newPosition.z],
+        }
+      })
+      .filter((powerUp) => powerUp.position[2] > - 20)
+      .filter((powerUp) => powerUp.position[2] < 11)
+    )
+
+    // Check if target bullets collide with the player
+    for (const powerUp of powerUps) {
+      const powerUpPosition = new THREE.Vector3(...powerUp.position)
+      const playerPosition = playerRef.current.position
+
+      if (powerUpPosition.distanceTo(playerPosition) < 1) {
+        // Player is hit by a target bullet
+        setShotSpeedPlayer((prevSpeed) => prevSpeed + 0.5)
+
+        // Remove the target bullet
+        setPowerUps((prevPowerUps) =>
+        prevPowerUps.filter((p) => p.id !== powerUp.id)
+        )
       }
     }
 
@@ -471,6 +532,12 @@ export default function Player({ onScoreChange, onHPChange }) {
       {targetBullets.map((bullet) => (
         <EnemyBullet key={bullet.id} {...bullet} />
       ))}
+
+      {/* Power Up */}
+      {powerUps.map((powerUp) => (
+        <PowerUp key={powerUp.id} {...powerUp} />
+      ))}
+
 
     </>
   )
