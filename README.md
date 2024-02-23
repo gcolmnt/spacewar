@@ -4,8 +4,11 @@
 Spacewar is an exciting shoot 'em up game created for the Three.js Journey Challenge 008. Take control of a small spaceship, navigate through a sea of enemies, and aim to survive as long as possible to achieve your highest score.
 
 ## Gameplay
+- **Lives:** You start with 3 lives. Each time you are hit by an enemy, you lose a life. If you run out of lives, the game is over.
 - **Scoring:** Score points by hitting enemies; each kill adds 100 points to your score.
+- **Survival**: Be cautious, as enemies can get past your spaceship. However, each enemy passing by will return, adding one more enemy to the next wave.
 - **Power-ups:** Upon defeating an enemy, there is a small chance they will drop a power-up. Grab these power-ups to increase your shot speed and enhance your chances of survival.
+- **Enemy Waves**: As time passes, enemy waves become more challenging. Be prepared for increased enemy firepower.
 
 ## Challenge
 Think you've got what it takes? Can you make it past the impressive 20,000 points milestone? Test your skills and see how far you can go!
