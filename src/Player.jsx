@@ -35,6 +35,13 @@ export default function Player({ onScoreChange, onHPChange }) {
 
   const [subscribeKeys, getKeys] = useKeyboardControls()
 
+  const [ startMusic ] = useState(() => new Audio('./OldschoolMain.mp3'))
+  const [ fireMusic ] = useState(() => new Audio('./Fire.mp3'))
+  const [ hitMusic ] = useState(() => new Audio('./Hit.mp3'))
+  const [ gameOverMusic ] = useState(() => new Audio('./GameOver.mp3'))
+  const [ powerUpMusic ] = useState(() => new Audio('./SFX_Powerup_01.wav'))
+
+  const [ gameOverMusicON, setGameOverMusicON ] = useState(true)
   const [playerBullets, setPlayerBullets] = useState([])
   const [targetBullets, setTargetBullets] = useState([])
   const [powerUps, setPowerUps] = useState([])
@@ -132,6 +139,8 @@ export default function Player({ onScoreChange, onHPChange }) {
     playerRef.current.position.z = 0
     playerRef.current.position.x = 0
     playerRef.current.position.z = 9
+    setGameOverMusicON(true)
+    startMusic.pause()
     setPlayerHP((prevHP) => {
       const newHP = playerBaseHP
       onHPChange(newHP)
@@ -158,10 +167,11 @@ export default function Player({ onScoreChange, onHPChange }) {
         traverseAndSetOpacity(playerRef.current, 1)
         setTimeout(() => {
           setTargets(Array.from({ length: 5 }, () => spawnRandomTarget()))
-            // startMusic.currentTime = 0
-            // startMusic.loop = true
-            // startMusic.volume = 0.25
-            // startMusic.play()
+            startMusic.playbackRate = 0.92
+            startMusic.currentTime = 0
+            startMusic.loop = true
+            startMusic.volume = 0.20
+            startMusic.play()
         }, 500)
     }
   }
@@ -202,7 +212,7 @@ export default function Player({ onScoreChange, onHPChange }) {
 
   useFrame((state, delta) => {
 
-    console.log(playerHP)
+    console.log(shotSpeedPlayer)
 
     const { forward, backward, leftward, rightward, shoot } = getKeys()
 
@@ -251,6 +261,13 @@ export default function Player({ onScoreChange, onHPChange }) {
       setTargetBullets([])
       setTargets([])
       setPowerUps([])
+      startMusic.pause()
+      if ( gameOverMusicON ) {
+        gameOverMusic.currentTime = 0
+        gameOverMusic.volume = 0.25
+        gameOverMusic.play()
+        setGameOverMusicON(false)
+      }
       end()
     } else { 
       if (!canDecreaseHP) {
@@ -272,7 +289,9 @@ export default function Player({ onScoreChange, onHPChange }) {
       }
   
       setPlayerBullets((prevBullets) => [...prevBullets, newBullet])
-
+      fireMusic.currentTime = 0
+      fireMusic.volume = 0.15
+      fireMusic.play()
   
       // Cooldown setting
       canShoot.current = false
@@ -301,10 +320,11 @@ export default function Player({ onScoreChange, onHPChange }) {
         // Get the bulletPosition as a Vector 3
         const bulletPosition = new THREE.Vector3(...bullet.position)
 
-        // Check collision for each target
+        // Loop collision check for each bullets collide with the targets
         for (const target of targets) {
           // Get the bulletPosition as a Vector 3
           const targetPosition = new THREE.Vector3(...target.position)
+          // Check bullet position distance to target position
           if (targetPosition && bulletPosition.distanceTo(targetPosition) < 1) {
             // Remove the target if a bullet hit the target
             const updatedTargets = targets.filter((t) => t.id !== target.id)
@@ -348,7 +368,9 @@ export default function Player({ onScoreChange, onHPChange }) {
 
       if (targetPosition.distanceTo(playerPosition) < 1.5) {
         if (canDecreaseHP) {
-
+          hitMusic.currentTime = 0
+          hitMusic.volume = 0.4
+          hitMusic.play()
           setPlayerHP((prevHP) => {
             const newHP = prevHP - 1
             onHPChange(newHP)
@@ -388,13 +410,16 @@ export default function Player({ onScoreChange, onHPChange }) {
       .filter((powerUp) => powerUp.position[2] < 11)
     )
 
-    // Check if target bullets collide with the player
+    // Loop collision check for each powerUp collide with the player
     for (const powerUp of powerUps) {
       const powerUpPosition = new THREE.Vector3(...powerUp.position)
       const playerPosition = playerRef.current.position
 
-      if (powerUpPosition.distanceTo(playerPosition) < 1) {
+      if (powerUpPosition.distanceTo(playerPosition) < 1.5) {
         // Player is hit by a target bullet
+        powerUpMusic.currentTime = 0
+        powerUpMusic.volume = 0.2
+        powerUpMusic.play()
         setShotSpeedPlayer((prevSpeed) => prevSpeed + 0.5)
 
         // Remove the target bullet
@@ -480,7 +505,7 @@ export default function Player({ onScoreChange, onHPChange }) {
         .filter((bullet) => bullet.position[2] < 11)
     )    
 
-    // Check if target bullets collide with the player
+    // Loop collision check for each bullets collide with the targets
     for (const targetBullet of targetBullets) {
       const targetBulletPosition = new THREE.Vector3(...targetBullet.position)
       const playerPosition = playerRef.current.position
@@ -488,7 +513,9 @@ export default function Player({ onScoreChange, onHPChange }) {
       if (targetBulletPosition.distanceTo(playerPosition) < 1) {
         // Player is hit by a target bullet
         if (canDecreaseHP) {
-
+          hitMusic.currentTime = 0
+          hitMusic.volume = 0.4
+          hitMusic.play()
           setPlayerHP((prevHP) => {
             const newHP = prevHP - 1
             onHPChange(newHP)

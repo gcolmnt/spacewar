@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react'
 import { OrbitControls } from '@react-three/drei'
 import { KeyboardControls } from '@react-three/drei'
+import { Bloom, Scanline, ToneMapping, EffectComposer } from '@react-three/postprocessing';
 import { Canvas } from '@react-three/fiber'
 import Lights from './Lights.jsx'
 import Player from './Player.jsx'
@@ -42,6 +43,19 @@ export default function Experience()
             rotation: [ -1, 0, 0 ],
         } }
         >
+            <EffectComposer>
+                <Bloom 
+                    mipmapBlur
+                    intensity={ 1.5 }
+                    luminanceThreshold={ 0.8 }
+                />
+                <Scanline 
+                    density={ 0.5 }
+                    opacity={ 0.075 }
+                />
+                <ToneMapping/>
+            </EffectComposer>
+
             {/* <OrbitControls makeDefault /> */}
             <Player onScoreChange={handleScoreChange} onHPChange={handleHPChange}/>
             <Lights />
