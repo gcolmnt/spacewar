@@ -51,6 +51,7 @@ export default function Interface({ score,  playerHP })
         { phase === 'ready' ? 
             <>
                 <div className="start">Press any key</div>
+                <div className="control">Controls: Arrow keys/WASD to move, Space bar to shoot.</div>
             </>
              : null }
         {/* { phase === 'ended' && <div className="restart" onClick={ restart } >Restart</div> } */}
